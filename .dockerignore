@@ -1,11 +1,9 @@
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.log
+*.py[cod]
 .env
-venv/
-.idea/
+.venv/
+*.log
 *.jpg
 *.png
 *.mp4
+.idea/
