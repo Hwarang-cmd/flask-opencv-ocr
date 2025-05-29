@@ -6,7 +6,9 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-reader = easyocr.Reader(['en'], gpu=False)  # เปิด GPU ได้ถ้ารองรับ
+
+# ใช้ภาษาอังกฤษอย่างเดียว และปิด GPU เพื่อลด dependency
+reader = easyocr.Reader(['en'], gpu=False)
 
 @app.route('/')
 def home():
@@ -18,14 +20,14 @@ def ocr():
         return jsonify({'error': 'No image uploaded'}), 400
 
     file = request.files['image']
-    in_memory_file = np.frombuffer(file.read(), np.uint8)
-    img = cv2.imdecode(in_memory_file, cv2.IMREAD_COLOR)
+    npimg = np.frombuffer(file.read(), np.uint8)
+    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
 
-    # 🔍 STEP 1: Grayscale
+    # แปลงเป็น grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 🔍 STEP 2: Adaptive Threshold (รองรับแสงไม่สม่ำเสมอ)
-    adaptive = cv2.adaptiveThreshold(
+    # Adaptive thresholding
+    binary = cv2.adaptiveThreshold(
         gray, 255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV,
@@ -33,26 +35,21 @@ def ocr():
         C=2
     )
 
-    # 🔍 STEP 3: Morphology ลบ noise และเชื่อม segment
+    # Morphological operations
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    morph = cv2.morphologyEx(adaptive, cv2.MORPH_CLOSE, kernel, iterations=1)
+    morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-    # 🔍 STEP 4: Resize ให้ใหญ่ขึ้นเพื่อ OCR แม่นยำ
+    # Resize เพื่อเพิ่มความแม่นยำ
     scale_percent = 250
     width = int(morph.shape[1] * scale_percent / 100)
     height = int(morph.shape[0] * scale_percent / 100)
     resized = cv2.resize(morph, (width, height), interpolation=cv2.INTER_LINEAR)
 
-    # 🔍 STEP 5: OCR เฉพาะตัวเลข
-    result = reader.readtext(
-        resized,
-        detail=0,
-        paragraph=False,
-        allowlist='0123456789'
-    )
+    # OCR เฉพาะตัวเลข
+    result = reader.readtext(resized, detail=0, paragraph=False, allowlist='0123456789')
 
-    # 🔍 STEP 6: รวมผลลัพธ์แบบสะอาด
-    digits_only = ''.join([r.strip() for r in result if r.strip().isdigit()])
+    # รวมผลลัพธ์
+    digits_only = ''.join([r for r in result if r.strip().isdigit()])
     text = ' '.join(result)
 
     return jsonify({
