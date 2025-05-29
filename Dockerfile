@@ -1,25 +1,20 @@
-# เบสอิมเมจขนาดเล็ก
+# ✅ Dockerfile แบบเทพ ขนาดไม่เกิน 4GB ใช้ได้บน Railway
 FROM python:3.11-slim
 
-# ติดตั้ง dependency ที่จำเป็นสำหรับ EasyOCR และ OpenCV
+# ลดขนาดโดยติดตั้งเฉพาะ lib ที่ EasyOCR และ OpenCV ต้องใช้
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     libgl1 \
     libglib2.0-0 \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# สร้าง working directory
 WORKDIR /app
 
-# คัดลอกและติดตั้ง dependencies
+# คัดลอก requirements.txt แล้วติดตั้งด้วย --no-cache-dir และ --prefer-binary
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # คัดลอก source code ทั้งหมด
 COPY . .
 
-# ระบุพอร์ต (ใช้ตาม Flask ที่รัน)
 EXPOSE 8080
-
-# คำสั่งรันแอป
 CMD ["python", "main.py"]
