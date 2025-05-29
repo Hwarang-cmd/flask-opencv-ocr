@@ -1,5 +1,6 @@
+numpy
 flask
 flask-cors
-easyocr
-pillow
 numpy
+opencv-python-headless
+easyocr
