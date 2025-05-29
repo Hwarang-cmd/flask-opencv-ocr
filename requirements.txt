@@ -1,6 +1,0 @@
-numpy
-flask
-flask-cors
-numpy
-opencv-python-headless
-easyocr
