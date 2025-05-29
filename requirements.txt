@@ -1,6 +1,6 @@
 flask
 flask-cors
-easyocr
+easyocr==1.6.2
 pillow
 numpy
-opencv-python-headless
+opencv-python-headless==4.5.5.62
